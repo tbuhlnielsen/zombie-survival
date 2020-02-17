@@ -7,6 +7,8 @@ First written: 14th Feb 2020
 Based on tutorials by KidsCanCode (http://kidscancode.org/).
 """
 
+import pygame as pg
+
 # ==============================================================================
 
 class Scene:
@@ -16,8 +18,13 @@ class Scene:
         self.is_running = True
         self.game = game
 
+    def setup_groups(self, *args):
+        """Set up sprite groups for a Scene."""
+        for group in args:
+            setattr(self, group, pg.sprite.Group())
+
     def setup(self):
-        """Create sprites and sprite groups."""
+        """Set up sprites for a Scene."""
         raise NotImplementedError
 
     def events(self):
@@ -30,4 +37,8 @@ class Scene:
 
     def draw(self):
         """Draw a Scene's sprites to a screen."""
+        raise NotImplementedError
+
+    def run(self):
+        """The main loop."""
         raise NotImplementedError

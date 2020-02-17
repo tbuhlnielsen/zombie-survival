@@ -11,21 +11,18 @@ import pygame as pg
 
 import fx
 import settings
+import sprites.template
 
 # ==============================================================================
 
-class Wall(pg.sprite.Sprite):
+class Wall(sprites.template.Entity):
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, img):
         """Initialise a Wall at tile location (x, y)."""
-        super().__init__()
-
-        self.original_image = fx.load_image("tile_green.png")
+        super().__init__(x, y, img)
+        
         self.image = pg.transform.scale(self.original_image, settings.TILE_AREA)
+
         self.rect = self.image.get_rect()
-
-        self.x = x
-        self.y = y
-
-        self.rect.x = x * settings.TILE_SIZE
-        self.rect.y = y * settings.TILE_SIZE
+        self.rect.x = self.position.x
+        self.rect.y = self.position.y

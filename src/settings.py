@@ -18,7 +18,6 @@ WALL_SYMBOL = "1"
 MOB_SYMBOL = "M"
 
 # window
-CAPTION = "Zombie Survival"
 FPS = 60
 WINDOW_WIDTH = NUM_TILES_X * TILE_SIZE
 WINDOW_HEIGHT = NUM_TILES_Y * TILE_SIZE
@@ -38,4 +37,4 @@ RGB_BLUE = (0, 0, 255)
 RGB_CYAN = (0, 255, 255)
 
 # Custom
-RGB_BROWN = (105, 55, 5)
+BG_COLOR = (105, 55, 5)

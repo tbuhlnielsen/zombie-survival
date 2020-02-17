@@ -11,7 +11,7 @@ import pygame as pg
 
 import fx
 import scenes.template
-import scenes.playing
+import scenes.level1
 import settings
 
 # ==============================================================================
@@ -30,7 +30,7 @@ class Level(scenes.template.Scene):
             if e.type == pg.KEYDOWN:
                 if e.key == pg.K_RETURN:
                     self.is_running = False
-                    self.game.active_scene = scenes.playing.Level(self.game)
+                    self.game.active_scene = scenes.level1.Level(self.game)
 
     def update(self):
         pass
@@ -43,6 +43,8 @@ class Level(scenes.template.Scene):
         pg.display.update()
 
     def run(self):
+        self.setup()
+
         while self.is_running:
             self.game.dt = self.game.clock.tick(settings.FPS) / 1000
             self.events()
