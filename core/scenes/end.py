@@ -2,50 +2,57 @@
 """Zombie survival game
 
 core.scenes.start - The game's start screen.
+
+TO DO: add documentation and animations?
 """
 
 import pygame as pg
 
+from core.scene import Scene
 from core.ui.hud import draw_text
-from constants.settings import Window
+
+from constants.settings import *
 
 
-class End:
-    """Start scene of the game."""
+class EndScene(Scene):
+    """A demo scene with a blue sprite."""
 
     def __init__(self, game):
-        """Get the start scene running."""
-        self.game = game
-        self.is_running = True
-
-    def setup(self):
-        pass
+        super().__init__(game)
 
     def events(self):
-        """Respond to mouse clicks and key presses."""
-        for e in pg.event.get():
-            if e.type == pg.QUIT:
-                self.game.exit()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.end()
+                self.game.quit()
 
-            if e.type == pg.KEYDOWN:
-                if e.key == pg.K_RETURN:
-                    self.game.end_screen_music.stop()
-                    self.game.exit()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self.end()
+                    self.game.quit()
+
+                if event.key == pg.K_BACKSPACE:
+                    self.game.go_to_prev_scene()
 
     def update(self):
-        pass
+        self.dt = self.game.clock.tick(FPS) / 1000 # seconds
 
     def draw(self):
-        """Draw the start scene message."""
         self.game.screen.fill(pg.Color("black"))
+
         draw_text(self.game.screen, "Game Over", size=32)
+
         pg.display.update()
 
     def run(self):
-        """The main loop."""
         self.game.end_screen_music.play(loops=-1)
-        while self.is_running:
-            self.game.frame_duration = self.game.clock.tick(Window["fps"]) / 1000
+
+        self._running = True
+        while self._running:
             self.events()
             self.update()
             self.draw()
+
+    def end(self):
+        super().end()
+        self.game.end_screen_music.stop()

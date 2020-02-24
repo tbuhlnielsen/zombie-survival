@@ -4,28 +4,23 @@
 constants.settings - Constants defining some global game settings.
 """
 
-# Layers
-Layer = {
-    "obstacle": 1,
-    "item": 1,
-    "character": 2,
-    "weapon": 3,
-    "effects": 4
-}
+# drawing layers
+OBSTACLE_LAYER = 1
+ITEM_LAYER = 1
 
-# Tiles
-Tile = {
-    "size": 32, # pixels
-    "area": (32, 32),
-    "num_x": 32,
-    "num_y": 24
-}
+CHARACTER_LAYER = 2
 
-# Window
-Window  = {
-    "fps": 60,
-    "width": Tile["num_x"] * Tile["size"],
-    "height": Tile["num_y"] * Tile["size"],
-    "area": (Tile["num_x"] * Tile["size"], Tile["num_y"] * Tile["size"]),
-    "caption": "Zombie Survival"
-}
+WEAPON_LAYER = 3
+
+FX_LAYER = 4
+
+# grid
+TILE_SIZE = 32 # pixels
+TILE_AREA = (TILE_SIZE, TILE_SIZE)
+NUM_X_TILES = 32
+NUM_Y_TILES = 24
+
+# display
+FPS = 60
+WINDOW_AREA = (WIDTH, HEIGHT) = (NUM_X_TILES * TILE_SIZE,
+                                 NUM_Y_TILES * TILE_SIZE)

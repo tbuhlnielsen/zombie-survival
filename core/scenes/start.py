@@ -2,56 +2,61 @@
 """Zombie survival game
 
 core.scenes.start - The game's start screen.
+
+TO DO: add documentation and animations?
 """
 
 import pygame as pg
 
+from core.scene import Scene
 from core.scenes.level import Level
 from core.ui.hud import draw_text
-from constants.settings import Window
+
+from constants.settings import *
 
 
-class Start:
-    """Start scene of the game."""
+class StartScene(Scene):
+    """The welcome screen of the game."""
 
     def __init__(self, game):
-        """Get the start scene running."""
-        self.game = game
-        self.is_running = True
-
-    def setup(self):
-        pass
+        super().__init__(game)
 
     def events(self):
-        """Respond to mouse clicks and key presses."""
-        for e in pg.event.get():
-            if e.type == pg.QUIT:
-                self.game.exit()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.end()
+                self.game.quit()
 
-            if e.type == pg.KEYDOWN:
-                if e.key == pg.K_RETURN:
-                    self.go_to_next_scene()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self.end()
+                    self.game.quit()
+
+                if event.key == pg.K_RETURN:
+                    self.game.go_to_scene(Level(self.game, "demo"))
+
+                if event.key == pg.K_BACKSPACE:
+                    self.game.go_to_prev_scene()
 
     def update(self):
-        pass
+        self.dt = self.game.clock.tick(FPS) / 1000 # seconds
 
     def draw(self):
-        """Draw the start scene message."""
         self.game.screen.fill(pg.Color("black"))
-        draw_text(self.game.screen, "Press enter to start", size=32)
+
+        draw_text(self.game.screen, "Press Enter", size=32)
+
         pg.display.update()
 
     def run(self):
-        """The main loop."""
         self.game.start_screen_music.play(loops=-1)
-        while self.is_running:
-            self.game.frame_duration = self.game.clock.tick(Window["fps"]) / 1000
+
+        self._running = True
+        while self._running:
             self.events()
             self.update()
             self.draw()
 
-    def go_to_next_scene(self):
-        """Kill all processes in this scene and go to the next one."""
+    def end(self):
+        super().end()
         self.game.start_screen_music.stop()
-        self.is_running = False
-        self.game.active_scene = Level(self.game, "demo")

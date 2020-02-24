@@ -7,7 +7,7 @@ core.sprites.world - Classes representing objects that are part of the
 
 import pygame as pg
 
-from constants.settings import Layer
+from constants.settings import OBSTACLE_LAYER
 
 
 class Obstacle(pg.sprite.Sprite):
@@ -15,11 +15,11 @@ class Obstacle(pg.sprite.Sprite):
 
     def __init__(self, game, x, y, w, h):
         """Sets up the location and size of an Obstacle."""
-        self._layer = Layer["obstacle"]
+        self._layer = OBSTACLE_LAYER
         super().__init__()
 
         self.game = game
-        self.game.active_scene.obstacles.add(self)
+        self.game.get_scene().obstacles.add(self)
 
         self.x = x
         self.y = y

@@ -7,28 +7,28 @@ core.sprites.items - Classes for weapons and items that a Player can pick up.
 import pygame as pg
 import pytweening as tween
 
-from core.sprites.animations import GunFire
-from constants.settings import Layer
+from constants.settings import ITEM_LAYER, WEAPON_LAYER
+from core.ui.animations import GunFire
 
 class Item(pg.sprite.Sprite):
     """Base class for an item that a Player can pick up."""
 
     def __init__(self, game, position, kind):
         """Spawn an Item at position."""
-        self._layer = Layer["item"]
+        self._layer = ITEM_LAYER
         super().__init__()
 
         self.game = game
 
         self.position = position
 
-        # Groups
-        self.game.active_scene.all_sprites.add(self)
-        self.game.active_scene.items.add(self)
+        # groups
+        self.game.get_scene().all_sprites.add(self)
+        self.game.get_scene().items.add(self)
 
-        # Appearance
+        # appearance
         self.kind = kind
-        self.image = self.game.item_imgs[kind]
+        self.image = self.game.item_images[kind]
         self.rect = self.image.get_rect()
         self.rect.center = position
         self.hit_rect = self.rect
@@ -41,8 +41,8 @@ class Item(pg.sprite.Sprite):
 
     def update(self):
         """Bob an Item up and down."""
+        # take off 0.5 to start in center of range
         offset = self.bob_range * (self.tween(self.step / self.bob_range) - 0.5)
-        # Take off 0.5 to start in center
 
         self.rect.centery = self.position.y + offset * self.y_direction
 
@@ -67,7 +67,7 @@ class Weapon:
         self.damage = damage
         self.owner = owner
 
-        # For controlling how often a Player can use the Weapon.
+        # for controlling how often a Player can use the Weapon.
         self.last_used = 0
 
 
@@ -81,8 +81,8 @@ class Gun(Weapon):
 
         self.spread = calc_spread(accuracy)
 
-        # Used to spawn Bullets from an appropriate location on the sprite of
-        # the Gun's owner.
+        # used to spawn Bullets from an appropriate location on the sprite of
+        # the Gun's owner
         self.barrel_offset = barrel_offset
 
         self.range = range_
@@ -92,11 +92,14 @@ class Gun(Weapon):
     def fire(self, position, direction):
         """Fires a Bullet from position towards direction."""
         now = pg.time.get_ticks()
+
         if now - self.last_used > self.fire_rate:
             self.last_used = now
+
             b = Bullet(self.game, position, direction, self.range)
+
             self.anim = GunFire(self.game, position)
-            self.game.gun_sound_effects["pistol"].play()
+            self.game.pistol_sound.play()
 
             # Add recoil.
             # if self.owner:
@@ -145,12 +148,12 @@ class Bullet(pg.sprite.Sprite):
         """A Bullet is passed the range of the Gun that fires it in order to
         calculate how far it should travel before disappearing.
         """
-        self._layer = Layer["weapon"]
+        self._layer = WEAPON_LAYER
         super().__init__()
 
         self.game = game
-        self.game.active_scene.all_sprites.add(self)
-        self.game.active_scene.bullets.add(self)
+        self.game.get_scene().all_sprites.add(self)
+        self.game.get_scene().bullets.add(self)
 
         # Mechanics
         self.position = pg.math.Vector2(position) # Can't use position directly
@@ -162,7 +165,7 @@ class Bullet(pg.sprite.Sprite):
         self.velocity = direction * self.speed
 
         # Appearance
-        self.image = self.game.bullet_img
+        self.image = self.game.bullet_image
 
         self.rect = self.image.get_rect()
         self.rect.center = self.position
@@ -177,11 +180,12 @@ class Bullet(pg.sprite.Sprite):
         obstacles. Makes the Bullet disappear after it has been on screen
         for the duration of its lifetime.
         """
-        dt = self.game.frame_duration
+        dt = self.game.get_scene().dt
+
         self.position += self.velocity * dt
         self.rect.center = self.position
 
-        if pg.sprite.spritecollideany(self, self.game.active_scene.obstacles):
+        if pg.sprite.spritecollideany(self, self.game.get_scene().obstacles):
             self.kill()
 
         now = pg.time.get_ticks()

@@ -7,7 +7,12 @@ core.ui.hud - Class for drawing HUD elements, functions for drawing objects to
 
 import pygame as pg
 
-from constants.settings import Tile, Window
+from collections import namedtuple
+from os import path
+
+from core.tools.resources import load_font
+
+from constants.settings import *
 
 
 class HUD:
@@ -16,12 +21,12 @@ class HUD:
     def __init__(self, game):
         """Set up all the HUD elements."""
         self.game = game
-        self.player_health_bar = PlayerHealthBar(10, 10, 100, 20)
+        self.player_health_bar = PlayerHealthBar(x=10, y=10, w=100, h=20)
 
     def draw(self):
         """Draws all the HUD elements to the game screen."""
         self.player_health_bar.draw(self.game.screen,
-                                    self.game.active_scene.player.health)
+                                    self.game.get_scene().player.health)
 
 
 class PlayerHealthBar:
@@ -54,13 +59,13 @@ class PlayerHealthBar:
         pg.draw.rect(surf, pg.Color("white"), outline_rect, 2) # 2px border
 
 
-def draw_text(surf, text, size=16, x=Window["width"]//2, y=Window["height"]//2,
-              color=pg.Color("white")):
-    """Draws text on surf centred at pixel location (x, y). Uses the
-    system's default font.
-    """
-    font = pg.font.Font(pg.font.get_default_font(), size)
-    text_surf = font.render(text, True, color) # True for anti-alias
+def draw_text(surf, text, size=16, x=WIDTH//2, y=HEIGHT//2,
+              color=pg.Color("white"), font="kenvector-future", extension="ttf"):
+    """Draws text on surf centered at pixel (x, y)."""
+
+    font_ = load_font(font, extension, size)
+
+    text_surf = font_.render(text, True, color) # True for anti-alias
 
     text_rect = text_surf.get_rect()
     text_rect.center = (x, y)
@@ -68,16 +73,17 @@ def draw_text(surf, text, size=16, x=Window["width"]//2, y=Window["height"]//2,
     surf.blit(text_surf, text_rect)
 
 
-def draw_grid(surf):
+def draw_grid(surf, color=pg.Color("grey50")):
     """Draws the tile grid on surf."""
+
     # vertical lines
-    for x in range(0, Tile["num_x"]):
-        pg.draw.line(surf, pg.Color("grey50"),
-                     (x * Tile["size"], 0),
-                     (x * Tile["size"], Window["height"]))
+    for x in range(NUM_X_TILES):
+        pg.draw.line(surf, color,
+                     (x * TILE_SIZE, 0),
+                     (x * TILE_SIZE, HEIGHT))
 
     # horizontal lines
-    for y in range(0, Tile["num_y"]):
-        pg.draw.line(surf, pg.Color("grey50"),
-                     (0, y * Tile["size"]),
-                     (Window["height"], y * Tile["size"]))
+    for y in range(NUM_Y_TILES):
+        pg.draw.line(surf, color,
+                     (0, y * TILE_SIZE),
+                     (HEIGHT, y * TILE_SIZE))

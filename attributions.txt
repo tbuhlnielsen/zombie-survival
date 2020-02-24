@@ -1,4 +1,6 @@
-"Topdown Shooter" artwork by Kenney (https://www.kenney.nl/).
+Based on tutorials by KidsCanCode (http://kidscancode.org/).
+
+"Topdown Shooter" artwork and "Future" font by Kenney (https://www.kenney.nl/).
 
 "Zombie UI Pack" artwork by Osmic (https://opengameart.org/users/osmic).
 

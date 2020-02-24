@@ -8,7 +8,7 @@ import pygame as pg
 
 import random
 
-from constants.settings import Layer
+from constants.settings import FX_LAYER
 
 
 class Animation(pg.sprite.Sprite):
@@ -16,11 +16,11 @@ class Animation(pg.sprite.Sprite):
 
     def __init__(self, game, duration):
         """Set up the layer and duration of an Animation."""
-        self._layer = Layer["effects"]
+        self._layer = FX_LAYER
         super().__init__()
 
         self.game = game
-        self.game.active_scene.all_sprites.add(self)
+        self.game.get_scene().all_sprites.add(self)
 
         self.spawn_time = pg.time.get_ticks()
         self.duration = duration # ms
@@ -43,7 +43,7 @@ class GunFire(Animation):
 
         # Appearance
         size = random.randint(20, 40) # pixels
-        frame = random.choice(self.game.gun_animation)
+        frame = random.choice(self.game.smoke_animation)
         self.image = pg.transform.scale(frame, (size, size))
 
         self.rect = self.image.get_rect()

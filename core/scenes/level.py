@@ -8,22 +8,23 @@ TO DO: change occurences of "wall" in .tmx files to "obstacle"
 
 import pygame as pg
 
-from core.scenes.end import End
-
-from constants.settings import Window
+from core.scene import Scene
+from core.scenes.end import EndScene
 
 from core.sprites.characters import Player, Zombie
 from core.sprites.items import Item
 from core.sprites.world import Obstacle
 
 from core.tools.collisions import collide_hit_rect
+from core.tools.resources import TiledMap
 
 from core.ui.camera import Camera
 from core.ui.hud import HUD
-from core.ui.tilemap import TiledMap
+
+from constants.settings import *
 
 
-class Level:
+class Level(Scene):
     """A level in the game."""
 
     def __init__(self, game, map_name):
@@ -34,7 +35,6 @@ class Level:
         self.game = game
         self.map_name = map_name
 
-        self.is_running = True
         self.debug = False
 
     def load_map(self):
@@ -56,11 +56,11 @@ class Level:
 
             if tile_obj.name == "player":
                 self.player = Player(self.game, obj_center.x, obj_center.y,
-                                      self.game.player_img)
+                                      self.game.player_image)
 
             if tile_obj.name == "zombie":
                 z = Zombie(self.game, obj_center.x, obj_center.y,
-                           self.game.zombie_img)
+                           self.game.zombie_image)
 
             if tile_obj.name == "wall":
                 ob = Obstacle(self.game, tile_obj.x, tile_obj.y, tile_obj.width,
@@ -79,25 +79,33 @@ class Level:
 
     def events(self):
         """Respond to mouse clicks and key presses."""
-        if self.game.active_scene:
-            for e in pg.event.get():
-                if e.type == pg.QUIT:
-                    self.game.exit()
+        for e in pg.event.get():
+            if e.type == pg.QUIT:
+                self.end()
+                self.game.quit()
 
-                if e.type == pg.KEYDOWN:
-                    if e.key == pg.K_h:
-                        self.debug = not self.debug
+            if e.type == pg.KEYDOWN:
+                if e.key == pg.K_h:
+                    self.debug = not self.debug
+
+                if e.key == pg.K_RETURN:
+                    self.game.go_to_scene(EndScene(self.game))
+
+                if e.key == pg.K_BACKSPACE:
+                    self.game.go_to_prev_scene()
 
     def update(self):
         """Update all the Level's sprites and handle interactions."""
-        if self.game.active_scene:
+        self.dt = self.game.clock.tick(FPS) / 1000
+
+        if self._running:
             self.all_sprites.update()
 
             self.camera.update(target=self.player)
 
             items = self.player.check_item_pickup()
             for i in items:
-                if i.kind == "health" and self.player.health < self.player.max_health:
+                if i.kind == "health" and self.player.is_injured():
                     i.kill()
                     self.player.add_health(50)
 
@@ -117,9 +125,7 @@ class Level:
                 hit.velocity = pg.math.Vector2(0, 0) # Zombie stops moving when
                                                      # it hits player.
                 if self.player.health <= 0:
-                    self.game.background_music.stop()
-                    self.is_running = False
-                    self.game.active_scene = End(self.game)
+                    self.game.go_to_scene(EndScene(self.game))
 
             if hits:
                 self.player.position += pg.math.Vector2(20, 0).rotate(-hits[0].rotation)
@@ -137,7 +143,7 @@ class Level:
 
     def draw(self):
         """Draw all the Level's sprites to the game screen."""
-        if self.is_running:
+        if self._running:
             title = "FPS: {:.2f}".format(self.game.clock.get_fps())
             pg.display.set_caption(title)
 
@@ -146,9 +152,9 @@ class Level:
 
             for sprite in self.all_sprites:
                 if isinstance(sprite, Zombie):
-                    sprite.draw_health() # This must come before sprite blitting
-                                         # in order for the health bar to
-                                         # actually be drawn.
+                    # a Zombie's health bar is drawn on its image, so this must
+                    # come before blitting to the  screen
+                    sprite.draw_health()
 
                 self.game.screen.blit(sprite.image, self.camera.apply(sprite))
 
@@ -161,9 +167,15 @@ class Level:
 
     def run(self):
         """The main loop."""
+        self.setup()
         self.game.background_music.play(loops=-1)
-        while self.is_running:
-            self.game.frame_duration = self.game.clock.tick(Window["fps"]) / 1000
+
+        self._running = True
+        while self._running:
             self.events()
             self.update()
             self.draw()
+
+    def end(self):
+        super().end()
+        self.game.background_music.stop()

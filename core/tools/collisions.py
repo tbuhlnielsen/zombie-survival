@@ -2,47 +2,45 @@
 """Zombie survival game
 
 core.tools.collisions - Functions for detecting collisions between game objects.
+
+TO DO: explain axis_collide().
 """
 
 import pygame as pg
 
 
-def collide_hit_rect(sprite_A, sprite_B):
-    """Detect a collision between sprite_A and sprite_B using their
-    hit_rect attributes.
+def collide_hit_rect(A, B):
+    """Detect a collision between two sprites A and B using the hit_rect
+    of A.
     """
-    return sprite_A.hit_rect.colliderect(sprite_B.rect)
+    return A.hit_rect.colliderect(B.rect)
 
 
 def axis_collide(sprite, group, axis):
-    """Check for collisions between sprite and group.
-
-    TO DO: explain axis.
+    """Check for collisions between sprite and group using collide_hit_rect().
     """
-    # False means don't delete walls
+    # False => don't kill the objects in group that intersect sprite
     hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
 
     if hits:
+        h = hits[0]
         if axis == "x":
-            if hits[0].rect.centerx > sprite.hit_rect.centerx:
-                sprite.position.x = (hits[0].rect.left
-                                     - sprite.hit_rect.width/2)
+            if h.rect.centerx > sprite.hit_rect.centerx:
+                sprite.position.x = h.rect.left - sprite.hit_rect.width/2
+                # position tracks the center of sprite
 
-            if hits[0].rect.centerx < sprite.hit_rect.centerx:
-                sprite.position.x = (hits[0].rect.right
-                                     + sprite.hit_rect.width/2)
+            if h.rect.centerx < sprite.hit_rect.centerx:
+                sprite.position.x = h.rect.right + sprite.hit_rect.width/2
 
             sprite.velocity.x = 0
             sprite.hit_rect.centerx = sprite.position.x
 
         if axis == "y":
-            if hits[0].rect.centery > sprite.hit_rect.centery:
-                sprite.position.y = (hits[0].rect.top
-                                     - sprite.hit_rect.height/2)
+            if h.rect.centery > sprite.hit_rect.centery:
+                sprite.position.y = h.rect.top - sprite.hit_rect.height/2
 
-            if hits[0].rect.centery < sprite.hit_rect.centery:
-                sprite.position.y = (hits[0].rect.bottom
-                                     + sprite.hit_rect.height/2)
+            if h.rect.centery < sprite.hit_rect.centery:
+                sprite.position.y = h.rect.bottom + sprite.hit_rect.height/2
 
             sprite.velocity.y = 0
             sprite.hit_rect.centery = sprite.position.y
