@@ -1,14 +1,17 @@
 
 """Zombie survival game
 
-core.sprite
+core.sprite - Base class for a character that can move, rotate, and collide with
+              other game objects.
 """
 
 import pygame as pg
 
-from core.tools.collisions import axis_collide
-
 from constants.settings import *
+
+
+# shorten name
+vec = pg.math.Vector2
 
 
 class Character(pg.sprite.Sprite):
@@ -16,58 +19,58 @@ class Character(pg.sprite.Sprite):
     other game objects.
     """
 
-    def __init__(self, game, x, y, img, max_speed, max_spin_rate):
+    def __init__(self, game, x, y, image, max_speed):
         """Set up the mechanics and appearance of a Character."""
-
+        # drawing layer
         self._layer = CHARACTER_LAYER
         super().__init__()
 
         self.game = game
 
         # mechanics
-        self.position = pg.math.Vector2(x, y)
+        self.position = vec(x, y)
 
         self.max_speed = max_speed # pixels per second
-        self.velocity = pg.math.Vector2(0, 0) # set components to +- max_speed
+        self.velocity = vec(0, 0) # set components to +- max_speed
 
-        self.acceleration = pg.math.Vector2(0, 0)
+        self.acceleration = vec(0, 0)
 
-        self.max_spin_rate = max_spin_rate # degrees per second
-        self.rotate_speed = 0 # set to +- max_spin_rate
+        self.rotate_speed = 0 # set to +- MAX_SPIN_RATE
         self.rotation = 0 # degrees
 
         # appearance
-        self.original_image = img # for applying transformations to
+        self.original_image = image # for applying transformations to
         self.image = self.original_image.copy()
 
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
-        # collision rect
+        # collision rect - slightly smaller than image rect
         s = int(TILE_SIZE * 0.75)
         self.hit_rect = pg.Rect(0, 0, s, s)
         self.hit_rect.center = (x, y)
 
-        # other
-        self.max_health = 100
-        self.health = self.max_health
+        # health
+        self._health = MAX_HEALTH
 
     def rotate_image(self):
-        """Updates self.image by rotating self.original_image."""
+        """Updates a character's image by rotating its original image."""
         self.image = pg.transform.rotate(self.original_image, self.rotation)
         self.rect = self.image.get_rect()
         self.rect.center = self.position
 
-    def check_for_collide(self):
-        """Updates a Character's position if it collides with an obstacle."""
-        self.hit_rect.centerx = self.position.x
-        axis_collide(self, self.game.get_scene().obstacles, "x")
+    def get_health(self):
+        """Returns the value of a character's health."""
+        return self._health
 
-        self.hit_rect.centery = self.position.y
-        axis_collide(self, self.game.get_scene().obstacles, "y")
-
-        self.rect.center = self.hit_rect.center
+    def increase_health(self, amount):
+        """Increases the health of a character by amount (can be negative)."""
+        self._health = min(MAX_HEALTH, self._health + amount)
 
     def is_injured(self):
-        """True iff a Character's health has decreased."""
-        return self.health < self.max_health
+        """True iff a character's health has decreased."""
+        return self._health < MAX_HEALTH
+
+    def is_dead(self):
+        """True iff a character's health is <= 0."""
+        return self._health <= 0

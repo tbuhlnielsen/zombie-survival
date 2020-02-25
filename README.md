@@ -4,6 +4,14 @@
 Use the arrow keys (or W, A, S, D) to control player movement, and press SPACE
 to fire weapon.
 
+## Previews
+
+![start](./previews/start.png "Start screen")
+
+![playing](./previews/playing.png "Main game")
+
+![pause](./previews/pause.png "Pause screen")
+
 ## Requirements
 
 * [pygame](https://www.pygame.org/news) 1.9.6
@@ -14,5 +22,5 @@ to fire weapon.
 
 ## Notes
 
-* If using a Mac, there may be a frame-rate issue try loading Python in low
+* If using a Mac, there may be a frame-rate issue; try loading Python in low
   resolution mode. See [here](https://github.com/pygame/pygame/issues/1032).

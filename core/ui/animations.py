@@ -41,7 +41,7 @@ class GunFire(Animation):
 
         self.position = position
 
-        # Appearance
+        # appearance
         size = random.randint(20, 40) # pixels
         frame = random.choice(self.game.smoke_animation)
         self.image = pg.transform.scale(frame, (size, size))
@@ -49,4 +49,4 @@ class GunFire(Animation):
         self.rect = self.image.get_rect()
         self.rect.center = position
 
-        self.hit_rect = self.rect # For debugging
+        self.hit_rect = self.rect # for debugging

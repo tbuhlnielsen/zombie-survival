@@ -8,20 +8,25 @@ import random
 import pygame as pg
 
 from core.sprite import Character
-from core.sprites.items import Gun, Pistol
-from core.tools.collisions import axis_collide
+from core.sprites.items import Gun, WEAPONS
+
+from core.tools.collisions import obstacle_collide
 
 from constants.settings import *
+
+
+# shorten name
+vec = pg.math.Vector2
 
 
 class Player(Character):
     """A survivor of the zombie invasion."""
 
-    def __init__(self, game, x, y, img, max_speed=200, max_spin_rate=250):
-        """A Player starts out with a Pistol."""
-        super().__init__(game, x, y, img, max_speed, max_spin_rate)
+    def __init__(self, game, x, y, image, max_speed=200):
+        """Starts a player out with a pistol."""
+        super().__init__(game, x, y, image, max_speed)
 
-        self.weapon = Pistol(self.game, owner=self)
+        self.weapon = Gun(self.game, **WEAPONS["pistol"])
 
         # appearance
         # self.image = pg.transform.scale(self.original_image, Tile["area"])
@@ -32,53 +37,44 @@ class Player(Character):
         self.game.get_scene().all_sprites.add(self)
 
     def use_weapon(self):
-        """Checks to see which kind of Weapon a Player has and then uses it."""
-        if isinstance(self.weapon, Gun):
-            position = (self.position
-                        + self.weapon.barrel_offset.rotate(-self.rotation))
+        """Checks to see which kind of weapon a player has and then uses it."""
+        position = (self.position
+                    + self.weapon.barrel_offset.rotate(-self.rotation))
 
-            direction = pg.math.Vector2(1, 0).rotate(-self.rotation)
-            offset = random.uniform(-self.weapon.spread, self.weapon.spread)
+        d = vec(1, 0).rotate(-self.rotation)
+        offsets = [random.uniform(-self.weapon.spread, self.weapon.spread) \
+                    for _ in range(self.weapon.bullet_count)]
+        directions = [d.rotate(ofs) for ofs in offsets]
 
-            self.weapon.fire(position, direction.rotate(offset))
-
-    def check_item_pickup(self):
-        """Returns any Items a Player walks over."""
-        # dokill == False because a Player might not intend to pick up an item
-        # e.g. not picking up a health pack when health is already full
-        return pg.sprite.spritecollide(self, self.game.get_scene().items, False)
-
-    def add_health(self, amount):
-        """Adds amount health to a Player."""
-        self.health = min(self.max_health, self.health + amount)
+        self.weapon.fire(position, directions)
 
     def rotate(self, keys, dt):
-        """Rotate a Player in response to key presses."""
+        """Rotate a player in response to key presses."""
         # only rotate if a key is pressed
         self.rotate_speed = 0
 
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.rotate_speed = self.max_spin_rate
+            self.rotate_speed = MAX_SPIN_RATE
 
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.rotate_speed = -self.max_spin_rate
+            self.rotate_speed = -MAX_SPIN_RATE
 
         self.rotation = (self.rotation + self.rotate_speed * dt) % 360
         self.rotate_image()
 
     def move(self, keys, dt):
-        """Update a Player's position and velocity in response to key
+        """Update a player's position and velocity in response to key
         presses.
         """
         # only move if a key is pressed
-        self.velocity = pg.math.Vector2(0, 0)
+        self.velocity = vec(0, 0)
 
         if keys[pg.K_UP] or keys[pg.K_w]:
-            self.velocity = pg.math.Vector2(self.max_speed, 0).rotate(-self.rotation)
+            self.velocity = vec(self.max_speed, 0).rotate(-self.rotation)
 
+        # go at half speed when moving backwards
         if keys[pg.K_DOWN] or keys[pg.K_s]:
-            # Go at half speed when moving backwards.
-            self.velocity = pg.math.Vector2(-self.max_speed/2, 0).rotate(-self.rotation)
+            self.velocity = vec(-self.max_speed/2, 0).rotate(-self.rotation)
 
         self.position += self.velocity * dt
 
@@ -94,24 +90,23 @@ class Player(Character):
         if keys[pg.K_SPACE]:
             self.use_weapon()
 
-        self.check_for_collide()
+        obstacle_collide(self, self.game.get_scene().obstacles)
 
 
 class Zombie(Character):
     """Chases a Player."""
 
-    def __init__(self, game, x, y, img, max_speed=150, max_spin_rate=None):
+    def __init__(self, game, x, y, image, max_speed=175):
         """Initialises a Zombie at tile location (x, y)."""
-
-        super().__init__(game, x, y, img, max_speed, max_spin_rate)
+        super().__init__(game, x, y, image, max_speed)
 
         # mechanics
-        self.speeds = [self.max_speed - 10 * i for i in range(5)]
-        self.speed = random.choice(self.speeds)
+        speeds = [self.max_speed - 10*i for i in range(5)]
+        self.speed = random.choice(speeds)
 
         # AI
         self.avoid_radius = 50 # pixels, for avoiding other Zombies
-        self.sight_radius = 400 # a Zombie can only "see" a Player in this radius
+        self.sight_radius = 400 # a zombie can only "see" a player in this radius
         self.target = self.game.get_scene().player
 
         # appearance
@@ -124,32 +119,31 @@ class Zombie(Character):
         self.game.get_scene().zombies.add(self)
 
     def draw_health(self):
-        """Adds a health bar above a Zombie."""
-        if self.health > 60:
-            color = pg.Color("green")
+        """Adds a health bar above a zombie."""
+        if self._health > 60:
+            color = GREEN
 
-        elif self.health > 30:
-            color = pg.Color("yellow")
+        elif self._health > 30:
+            color = YELLOW
 
         else:
-            color = pg.Color("red")
+            color = RED
 
-        width = int(self.rect.width * self.health / self.max_health)
+        width = int(self.rect.width * self._health / MAX_HEALTH)
         height = 5
-        self.health_rect = pg.Rect(0, 0, width, height)
+        self.health_rect = pg.Rect(0, 0, width, height) # does this need to be self.health_rect?
 
-        if self.health < self.max_health:
+        if self.is_injured():
             pg.draw.rect(self.image, color, self.health_rect)
 
     def rotate_to_player(self):
-        """Rotates a Zombie in the direction of the Player."""
-        x_hat = pg.math.Vector2(1, 0)
-
+        """Rotates a zombie in the direction of the player."""
+        x_hat = vec(1, 0)
         self.rotation = (self.target.position - self.position).angle_to(x_hat)
         self.rotate_image()
 
     def avoid_others(self):
-        """Ensures a Zombie doesn't clump together with other zombies in a
+        """Ensures a zombie doesn't clump together with other zombies in a
         single 'pile'.
         """
         for z in self.game.get_scene().zombies:
@@ -161,10 +155,10 @@ class Zombie(Character):
         self.acceleration.scale_to_length(self.speed)
 
     def move(self, dt):
-        """Uses equations of motion to update a Zombie's acceleration, velocity,
+        """Uses equations of motion to update a zombie's acceleration, velocity,
         and position.
         """
-        self.acceleration = pg.math.Vector2(1, 0).rotate(-self.rotation)
+        self.acceleration = vec(1, 0).rotate(-self.rotation)
         self.avoid_others()
         self.acceleration += -self.velocity # friction
 
@@ -174,22 +168,28 @@ class Zombie(Character):
                           + 0.5 * self.acceleration * (dt ** 2))
 
     def update(self):
-        """Makes a Zombie chase a Player if the Player is in range or the
-        Player has shot the Zombie.
+        """Makes a zombie chase a player if the player is in range or the
+        player has shot the Zombie.
         """
         dt = self.game.get_scene().dt
 
         target_distance2 = (self.target.position-self.position).length_squared()
-
         if target_distance2 < self.sight_radius ** 2 or self.is_injured():
             self.rotate_to_player()
             self.move(dt)
-            self.check_for_collide()
+            obstacle_collide(self, self.game.get_scene().obstacles)
 
             # play a sound effect once in a while
             if random.random() < 0.002:
                 random.choice(self.game.zombie_groans).play()
 
-        if self.health <= 0:
-            # play sound effect
-            self.kill()
+    def run_death_sequence(self):
+        """Called when a zombie dies - play a sound effect and leave a splat."""
+        self.kill()
+
+        # play sound effect
+
+        s = random.choice(self.game.splat_images)
+        splat = pg.transform.scale(s, (TILE_SIZE * 2, TILE_SIZE * 2))
+        offset = vec(TILE_SIZE, TILE_SIZE)
+        self.game.get_scene().map_image.blit(splat, self.position - offset)

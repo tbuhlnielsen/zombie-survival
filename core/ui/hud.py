@@ -7,9 +7,6 @@ core.ui.hud - Class for drawing HUD elements, functions for drawing objects to
 
 import pygame as pg
 
-from collections import namedtuple
-from os import path
-
 from core.tools.resources import load_font
 
 from constants.settings import *
@@ -26,7 +23,7 @@ class HUD:
     def draw(self):
         """Draws all the HUD elements to the game screen."""
         self.player_health_bar.draw(self.game.screen,
-                                    self.game.get_scene().player.health)
+                                    self.game.get_scene().player.get_health())
 
 
 class PlayerHealthBar:
@@ -47,35 +44,62 @@ class PlayerHealthBar:
         fill_rect = pg.Rect(self.x, self.y, fill, self.height)
 
         if p > 60:
-            color = pg.Color("green")
+            color = GREEN
 
         elif p > 30:
-            color = pg.Color("yellow")
+            color = YELLOW
 
         else:
-            color = pg.Color("red")
+            color = RED
 
         pg.draw.rect(surf, color, fill_rect)
-        pg.draw.rect(surf, pg.Color("white"), outline_rect, 2) # 2px border
+        pg.draw.rect(surf, WHITE, outline_rect, 2) # 2px border
 
 
-def draw_text(surf, text, size=16, x=WIDTH//2, y=HEIGHT//2,
-              color=pg.Color("white"), font="kenvector-future", extension="ttf"):
-    """Draws text on surf centered at pixel (x, y)."""
+def draw_text(surf, text, size=16, color=WHITE, x=WIDTH//2, y=HEIGHT//2,
+              align="center", font_name=None):
+    """Draws text on surf at pixel (x, y)."""
+    # use default font if necessary
+    font_ = "kenvector-future.ttf" if not font_name else font_name
+    font = load_font(font_, size)
 
-    font_ = load_font(font, extension, size)
-
-    text_surf = font_.render(text, True, color) # True for anti-alias
-
+    text_surf = font.render(text, True, color) # True for anti-alias
     text_rect = text_surf.get_rect()
-    text_rect.center = (x, y)
 
+    # choose alignment
+    if align == "nw":
+        text_rect.topleft = (x, y)
+
+    if align == "ne":
+        text_rect.topright = (x, y)
+
+    if align == "sw":
+        text_rect.bottomleft = (x, y)
+
+    if align == "se":
+        text_rect.bottomright = (x, y)
+
+    if align == "n":
+        text_rect.midtop = (x, y)
+
+    if align == "s":
+        text_rect.midbottom = (x, y)
+
+    if align == "e":
+        text_rect.midright = (x, y)
+
+    if align == "w":
+        text_rect.midleft = (x, y)
+
+    if align == "center":
+        text_rect.center = (x, y)
+
+    text_rect.center = (x, y)
     surf.blit(text_surf, text_rect)
 
 
-def draw_grid(surf, color=pg.Color("grey50")):
+def draw_grid(surf, color=GREY):
     """Draws the tile grid on surf."""
-
     # vertical lines
     for x in range(NUM_X_TILES):
         pg.draw.line(surf, color,

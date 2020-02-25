@@ -1,10 +1,15 @@
 """Zombie survival game
 
 * First written: 14th Feb 2020
+
 * Updated: 21st Feb 2020
   Add effects, use pygame colors.
+
 * Updated: 24th Feb 2020
   Implement scene stack, clean up code slightly.
+
+* Updated: 25th Feb 2020
+  Continue code clean-up, add pause screen, remove scene stack.
 
 main - Class for running and controlling the game.
 """
@@ -18,86 +23,58 @@ from constants.settings import *
 
 
 class Game:
-    """The scenes in a Game are managed with a stack; this class calls run() on
-    the scene on top of the stack, which kicks off an event/update/draw game
-    loop.
-    """
+    """A zombie survival game."""
 
     def __init__(self):
         """Sets up the game clock, display window and first scene."""
         # load pygame modules
+        # pg.mixer.pre_init(44100, -16, 1, 2048)
         pg.init()
         pg.mixer.init()
 
         self.clock = pg.time.Clock()
 
         self.screen = pg.display.set_mode(WINDOW_AREA)
-        self.title = pg.display.set_caption("Zombie Survival")
-        self._running = True # set to False to close window
+        self.title = pg.display.set_caption(TITLE)
 
         self._scene = StartScene(self)
-        self._stack = [self._scene]
 
     def get_scene(self):
+        """Returns the active scene."""
         return self._scene
 
+    def set_scene(self, scene):
+        """Updates the current scene to a new one."""
+        self._scene = scene
+
     def load(self):
-        """Load all the game assets."""
+        """Loads all the game assets. Returns the time taken to do so."""
         fx = ResourceLoader(self)
 
         t1 = pg.time.get_ticks()
-        fx.load() # takes about 0.7 seconds
+        fx.load()
         t2 = pg.time.get_ticks()
 
-        # print("Loading time:", t2 - t1)
-
-    def go_to_scene(self, scene):
-        """Stop running the current scene and put a new one at the top of
-        the stack.
-        """
-        self._scene.end()
-        self._scene = scene
-        self._stack.append(scene)
-
-    def go_to_prev_scene(self):
-        """Stop running the current scene and pop it from the top of the stack
-        to start running the one below it.
-        """
-        # don't do anything if the stack only has one element
-        if len(self._stack) > 1:
-            self._scene.end()
-            self._stack.pop()
-            self._scene = self._stack[-1]
+        return t2 - t1 # loading time - about 700 milliseconds
 
     def run(self):
-        """Call run() on the scene at the top of the stack."""
-        while self._running:
+        """Continuously runs the active scene."""
+        self._open = True # set to False to close window
+        while self._open:
+            self._scene.load()
             self._scene.run()
 
-    def quit(self):
+    def end(self):
         """Exits the game."""
-        self._running = False
-
-    def __str__(self):
-        """Returns a string representation of the scene stack."""
-
-        s = "["
-
-        for i, scene in enumerate(self._stack):
-            s += str(scene)
-            if i != len(self._stack) - 1:
-                s += ", "
-
-        s += "]"
-
-        return s
+        self._open = False
 
 
 def main():
     """Loads a game and runs it."""
-    g = Game()
-    g.load()
-    g.run()
+    game = Game()
+    game.load()
+    game.run()
+    pg.quit()
 
 
 if __name__ == "__main__":

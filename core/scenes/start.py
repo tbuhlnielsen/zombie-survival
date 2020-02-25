@@ -3,7 +3,7 @@
 
 core.scenes.start - The game's start screen.
 
-TO DO: add documentation and animations?
+TO DO: add menu with highscores, controls, settings.
 """
 
 import pygame as pg
@@ -16,47 +16,40 @@ from constants.settings import *
 
 
 class StartScene(Scene):
-    """The welcome screen of the game."""
+    """The game's start screen."""
 
     def __init__(self, game):
         super().__init__(game)
 
+    def load(self):
+        """Sets up the start screen's music and background image."""
+        self.music = self.game.start_screen_music
+        self.music.play(loops=-1)
+
+        bg = self.game.start_background
+        self.background = pg.transform.scale(bg, WINDOW_AREA)
+
     def events(self):
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
+        """Checks for quitting or starting the game."""
+        for e in pg.event.get():
+            if e.type == pg.QUIT:
                 self.end()
-                self.game.quit()
+                self.game.end()
 
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_ESCAPE:
+            if e.type == pg.KEYDOWN:
+                if e.key == pg.K_RETURN:
                     self.end()
-                    self.game.quit()
-
-                if event.key == pg.K_RETURN:
-                    self.game.go_to_scene(Level(self.game, "demo"))
-
-                if event.key == pg.K_BACKSPACE:
-                    self.game.go_to_prev_scene()
+                    self.game.set_scene(Level(self.game, "demo.tmx"))
 
     def update(self):
-        self.dt = self.game.clock.tick(FPS) / 1000 # seconds
+        pass
 
     def draw(self):
-        self.game.screen.fill(pg.Color("black"))
-
-        draw_text(self.game.screen, "Press Enter", size=32)
-
-        pg.display.update()
-
-    def run(self):
-        self.game.start_screen_music.play(loops=-1)
-
-        self._running = True
-        while self._running:
-            self.events()
-            self.update()
-            self.draw()
+        """Displays a message telling the player to start the game."""
+        self.game.screen.blit(self.background, (0, 0))
+        draw_text(self.game.screen, "Press Enter", size=48)
 
     def end(self):
+        """Stops the start screen's music playing."""
         super().end()
-        self.game.start_screen_music.stop()
+        self.music.stop()

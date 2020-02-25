@@ -7,49 +7,27 @@ core.sprites.items - Classes for weapons and items that a Player can pick up.
 import pygame as pg
 import pytweening as tween
 
-from constants.settings import ITEM_LAYER, WEAPON_LAYER
 from core.ui.animations import GunFire
 
-class Item(pg.sprite.Sprite):
-    """Base class for an item that a Player can pick up."""
+from constants.settings import *
 
-    def __init__(self, game, position, kind):
-        """Spawn an Item at position."""
-        self._layer = ITEM_LAYER
-        super().__init__()
 
-        self.game = game
+# shorten name
+vec = pg.math.Vector2
 
-        self.position = position
-
-        # groups
-        self.game.get_scene().all_sprites.add(self)
-        self.game.get_scene().items.add(self)
-
-        # appearance
-        self.kind = kind
-        self.image = self.game.item_images[kind]
-        self.rect = self.image.get_rect()
-        self.rect.center = position
-        self.hit_rect = self.rect
-
-        self.tween = tween.easeInOutSine # Bobbing animation
-        self.bob_range = 16
-        self.bob_speed = 0.4
-        self.step = 0 # Between start and end of bobbing
-        self.y_direction = 1 # Down screen; -1 is up screen
-
-    def update(self):
-        """Bob an Item up and down."""
-        # take off 0.5 to start in center of range
-        offset = self.bob_range * (self.tween(self.step / self.bob_range) - 0.5)
-
-        self.rect.centery = self.position.y + offset * self.y_direction
-
-        self.step += self.bob_speed
-        if self.step > self.bob_range:
-            self.step = 0
-            self.y_direction *= -1
+# stats for various weapons
+WEAPONS = {
+    "pistol": {
+        "damage": 10,
+        "accuracy": 80,
+        "barrel_offset": vec(25, 10),
+        "bullet_count": 1,
+        "bullet_speed": 400, # should scale
+        "range_": 60,
+        "recoil": 5,
+        "reload_time": 20 # should scale
+    }
+}
 
 
 class Weapon:
@@ -75,7 +53,7 @@ class Gun(Weapon):
     """Base class for a Bullet-firing weapon."""
 
     def __init__(self, game, damage, accuracy, barrel_offset, range_, recoil,
-                 reload_time, owner=None):
+                 reload_time, bullet_count, bullet_speed, owner=None):
         """ """
         super().__init__(game, damage, owner)
 
@@ -85,21 +63,30 @@ class Gun(Weapon):
         # the Gun's owner
         self.barrel_offset = barrel_offset
 
+        self.bullet_count = bullet_count
+        self.bullet_speed = bullet_speed
+
         self.range = range_
         self.recoil = recoil
         self.fire_rate = calc_fire_rate(reload_time)
 
-    def fire(self, position, direction):
+
+    def fire(self, position, directions):
         """Fires a Bullet from position towards direction."""
         now = pg.time.get_ticks()
 
         if now - self.last_used > self.fire_rate:
             self.last_used = now
 
-            b = Bullet(self.game, position, direction, self.range)
+            for d in directions:
+                b = Bullet(self.game, position, d, self.bullet_speed, self.range)
 
             self.anim = GunFire(self.game, position)
-            self.game.pistol_sound.play()
+
+            snd = self.game.gun_sounds["pistol_sound"]
+            if snd.get_num_channels() > 2:
+                snd.stop()
+            snd.play()
 
             # Add recoil.
             # if self.owner:
@@ -131,20 +118,10 @@ def calc_spread(accuracy):
     return m * (accuracy - x0) + y0
 
 
-class Pistol(Gun):
-    """A basic Gun with low damage but high accuracy."""
-
-    def __init__(self, game, damage=10, accuracy=80,
-                 barrel_offset=pg.math.Vector2(25, 10), range_=60, recoil=5,
-                 reload_time=20, owner=None):
-        super().__init__(game, damage, accuracy, barrel_offset, range_, recoil,
-                         reload_time, owner)
-
-
 class Bullet(pg.sprite.Sprite):
     """Fired by a Gun."""
 
-    def __init__(self, game, position, direction, gun_range):
+    def __init__(self, game, position, direction, speed, gun_range):
         """A Bullet is passed the range of the Gun that fires it in order to
         calculate how far it should travel before disappearing.
         """
@@ -153,15 +130,14 @@ class Bullet(pg.sprite.Sprite):
 
         self.game = game
         self.game.get_scene().all_sprites.add(self)
-        self.game.get_scene().bullets.add(self)
+        self.game.get_scene().ammo.add(self)
 
         # Mechanics
-        self.position = pg.math.Vector2(position) # Can't use position directly
-                                                  # as this would modify the
-                                                  # position of whoever fired
-                                                  # the bullet.
+        self.position = vec(position) # can't use position directly as this
+                                      # would modify the position of whoever
+                                      # fired the bullet
 
-        self.speed = 500
+        self.speed = speed
         self.velocity = direction * self.speed
 
         # Appearance
@@ -203,3 +179,45 @@ def calc_lifetime(range_):
     m = (y1 - y0) / (x1 - x0)
 
     return m * (range_ - x0) + y0
+
+
+class Item(pg.sprite.Sprite):
+    """Base class for an item that a Player can pick up."""
+
+    def __init__(self, game, position, kind):
+        """Spawn an Item at position."""
+        self._layer = ITEM_LAYER
+        super().__init__()
+
+        self.game = game
+
+        self.position = position
+
+        # groups
+        self.game.get_scene().all_sprites.add(self)
+        self.game.get_scene().items.add(self)
+
+        # appearance
+        self.kind = kind
+        self.image = self.game.item_images[kind]
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.hit_rect = self.rect
+
+        self.tween = tween.easeInOutSine # Bobbing animation
+        self.bob_range = 16
+        self.bob_speed = 0.4
+        self.step = 0 # Between start and end of bobbing
+        self.y_direction = 1 # Down screen; -1 is up screen
+
+    def update(self):
+        """Bob an Item up and down."""
+        # take off 0.5 to start in center of range
+        offset = self.bob_range * (self.tween(self.step / self.bob_range) - 0.5)
+
+        self.rect.centery = self.position.y + offset * self.y_direction
+
+        self.step += self.bob_speed
+        if self.step > self.bob_range:
+            self.step = 0
+            self.y_direction *= -1
